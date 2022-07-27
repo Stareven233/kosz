@@ -1,5 +1,8 @@
 package main
 
+// go build  -o tiny_moji.exe ./
+// ./tiny_moji.exe
+
 import (
 	"bufio"
 	"fmt"
@@ -7,19 +10,10 @@ import (
 	"os/exec"
 )
 
-func Min(nums ...int64) int64 {
-	var minNum int64 = 1<<15 - 1
-	for _, num := range nums {
-		if num < minNum {
-			minNum = num
-		}
-	}
-	return minNum
-}
-
 func main() {
-	_ = exec.Command("cmd", "/c", "title tiny moji v2.3.0").Run()
+	_ = exec.Command("cmd", "/c", "title tiny moji v2.4.2").Run()
 	moji := NewMojiDict("F:/CODE/Go/translate_meow_go/local_moji.db")
+	defer moji.db.Close()
 
 	var req string
 	var res MojiWord
@@ -30,20 +24,30 @@ func main() {
 		data, _, _ := reader.ReadLine()
 		req = string(data)
 		req = moji.Command(req)
+		if req == "exit" && moji.commands[req] {
+			break
+		}
+		// 没有输入、输入控制字符都忽略
 		if reqLen := len(req); reqLen == 0 || reqLen == 1 && req[0] < 128 {
 			continue
 		}
 		//fmt.Printf("the input is:  ***%s***\n", req)
 
+		// 先从数据库中寻找现有的
 		res = moji.Search(req)
 		if res.ObjectID == "" {
+			// 本地找不到就联网查找
 			res = moji.Request(req)
 		}
-		if res.Spell == "" {
+		if res.ObjectID == "" {
+			// 未找到单词
+			fmt.Printf("    %+v\n", res)
 			continue
 		} else if req != res.Spell {
-			fmt.Printf("!!Warning: searched '%s' but found '%s'\n", req, res.Spell)
+			// 找到跟输入不一致的单词
+			fmt.Printf("warning: searched '%s' but found '%s'\n", req, res.Spell)
 		}
+		// 格式化输出找到的单词
 		fmt.Printf("\t%s %s\n\tcnt: %d\n\t%s\n", res.Pron, res.Accent, res.Count, res.Excerpt)
 	}
 }
