@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	_ = exec.Command("cmd", "/c", "title koszu v2.4.3").Run()
+	_ = exec.Command("cmd", "/c", "title koszu v2.5.0").Run()
 	moji := NewMojiDict("F:/CODE/Go/translate_meow_go/local_moji.db")
 	defer moji.db.Close()
 
@@ -41,7 +41,7 @@ func main() {
 		}
 		if res.ObjectID == "" {
 			// 未找到单词
-			fmt.Printf("    %+v\n", res)
+			// {Excerpt: Spell: Accent: Pron: ObjectID: Count:0 SearchedAt:0001-01-01 00:00:00 +0000 UTC}
 			continue
 		} else if req != res.Spell {
 			// 找到跟输入不一致的单词

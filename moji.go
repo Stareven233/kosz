@@ -66,7 +66,7 @@ func NewMojiDict(path string) MojiDict {
 		"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36")
 
 	db, err := sql.Open("sqlite3", path)
-	checkErr(err)
+	CheckErr(err)
 	// 若不存在则建表
 	sqlStmt := `CREATE TABLE IF NOT EXISTS moji_words(
 		excerpt text,
@@ -78,7 +78,7 @@ func NewMojiDict(path string) MojiDict {
 		searched_at datatime
 	);`
 	_, err = db.Exec(sqlStmt)
-	checkErr(err)
+	CheckErr(err)
 
 	return MojiDict{
 		url: "https://api.mojidict.com/parse/functions/search_v3",
@@ -98,7 +98,9 @@ func NewMojiDict(path string) MojiDict {
 			"del":    true,
 			"detail": true,
 			"help":   true,
+			"q":      true,
 			"exit":   true,
+			"seg":    true,
 		},
 	}
 }
@@ -106,7 +108,7 @@ func NewMojiDict(path string) MojiDict {
 // 构造http请求并从moji上查找单词
 func (moji MojiDict) Request(word string) MojiWord {
 	//var errors []error
-	defer showErrMsg()
+	defer ShowErrMsg()
 
 	// 设置moji搜索单词的post请求内容
 	moji.query["searchText"] = word
@@ -115,7 +117,7 @@ func (moji MojiDict) Request(word string) MojiWord {
 	request, _ := http.NewRequest("POST", moji.url, body)
 	request.Header = moji.header
 	resp, err := http.DefaultClient.Do(request)
-	checkErr(err)
+	CheckErr(err)
 
 	// 获取并解析响应数据
 	respBytes, _ := io.ReadAll(resp.Body)
@@ -132,13 +134,13 @@ func (moji MojiDict) Request(word string) MojiWord {
 	}
 	// moji.db.Create(&words[0])
 	stmt, err := moji.db.Prepare("insert into moji_words(excerpt, spell, accent, pron, object_id, count, searched_at) values(?,?,?,?,?,?,?)")
-	checkErr(err)
+	CheckErr(err)
 	defer stmt.Close()
 
 	t := time.Now()
 	w := words[0]
 	_, err = stmt.Exec(w.Excerpt, w.Spell, w.Accent, w.Pron, w.ObjectID, w.Count, t)
-	checkErr(err)
+	CheckErr(err)
 	return w
 }
 
@@ -157,20 +159,20 @@ func (moji MojiDict) Search(word string) (w MojiWord) {
 	}
 	// 日期需要手动转换为time.Time对象
 	w.SearchedAt, err = time.Parse(time.RFC3339Nano, tmp)
-	checkErr(err)
+	CheckErr(err)
 
 	// 存在该单词，更新查找次数count
 	if w.ObjectID != "" {
 		w.Count++
 		_, err = moji.db.Exec(fmt.Sprintf(`update moji_words set count = %d where object_id = "%s"`, w.Count, w.ObjectID))
-		checkErr(err)
+		CheckErr(err)
 	}
 	return
 }
 
 // 将输入的一行解析为指令执行
 func (moji MojiDict) Command(cmd string) (word string) {
-	defer showErrMsg()
+	defer ShowErrMsg()
 	c := strings.SplitN(cmd, " ", 3)
 	lenC, mainC := len(c), c[0]
 
@@ -196,7 +198,7 @@ func (moji MojiDict) Command(cmd string) (word string) {
 
 		// moji.db.Select("spell").Order("searched_at " + order).Limit(int(num)).Find(&words)
 		rows, err := moji.db.Query(fmt.Sprintf("select spell from moji_words order by searched_at %s limit %d", order, num))
-		checkErr(err)
+		CheckErr(err)
 		defer rows.Close()
 
 		// 挨个取出单词，再一起输出
@@ -204,7 +206,7 @@ func (moji MojiDict) Command(cmd string) (word string) {
 		wordStr := strings.Builder{}
 		for rows.Next() {
 			err = rows.Scan(&spell)
-			checkErr(err)
+			CheckErr(err)
 			wordStr.WriteString(fmt.Sprintf("    %s\n", spell))
 		}
 		println(wordStr.String())
@@ -236,6 +238,14 @@ func (moji MojiDict) Command(cmd string) (word string) {
 	// 退出程序
 	case "exit":
 		return "exit"
+	case "q":
+		return "exit"
+
+	// 将句子分词
+	case "seg":
+		text := strings.Join(c[1:], " ")
+		segs := TokenizeJp(text)
+		fmt.Println(segs)
 	}
 	return ""
 	//说明指令执行成功，不需再作为单词去查询

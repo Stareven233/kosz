@@ -11,7 +11,7 @@ import (
 
 func test_sqlite() {
 	db, err := sql.Open("sqlite3", "./nya_dict.db")
-	checkErr(err)
+	CheckErr(err)
 	defer db.Close()
 
 	sqlStmt := `CREATE TABLE IF NOT EXISTS moji_words(
@@ -24,17 +24,17 @@ func test_sqlite() {
 		searched_at datetime
 	);`
 	_, err = db.Exec(sqlStmt)
-	checkErr(err)
+	CheckErr(err)
 
 	// 插入
 	// stmt, err := db.Prepare("INSERT INTO moji_words(excerpt, spell, accent, pron, object_id, count, searched_at) values(?,?,?,?,?,?,?)")
-	// checkErr(err)
+	// CheckErr(err)
 	// t := time.Now()
 	// _, err = stmt.Exec("方法", "213", "df", "dsf", "a1", 79, t)
-	// checkErr(err)
+	// CheckErr(err)
 	// t = time.Now()
 	// _, err = stmt.Exec("是否为", "ert", "321", "656", "a2", 322, t)
-	// checkErr(err)
+	// CheckErr(err)
 	// stmt.Close()
 
 	// 查询
@@ -44,11 +44,11 @@ func test_sqlite() {
 	// querySql := fmt.Sprintf("select spell from moji_words order by searched_at %s limit %d", order, num)
 	// fmt.Println(querySql)
 	// rows, err := db.Query(querySql)
-	// checkErr(err)
+	// CheckErr(err)
 	// defer rows.Close()
 	// for rows.Next() {
 	// 	err = rows.Scan(&spell)
-	// 	checkErr(err)
+	// 	CheckErr(err)
 	// 	fmt.Println(spell)
 	// }
 
@@ -56,11 +56,11 @@ func test_sqlite() {
 	// delSql := fmt.Sprintf(`delete from moji_words where spell in ("%s")`, "ttt")
 	// fmt.Println(delSql)
 	// _, err = db.Exec(delSql)
-	// checkErr(err)
+	// CheckErr(err)
 
 	// 更新
 	// _, err = db.Exec(fmt.Sprintf(`update moji_words set count = %d where object_id = "%s"`, 0, "a2"))
-	// checkErr(err)
+	// CheckErr(err)
 
 	// 测试修改单一行
 	// word := "dfwe"

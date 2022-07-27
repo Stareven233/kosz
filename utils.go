@@ -3,23 +3,32 @@ package main
 import (
 	"fmt"
 
+	"github.com/go-ego/gse"
 	"github.com/pkg/errors"
 )
 
-func showErrMsg() {
+func TokenizeJp(text string) []string {
+	var seg gse.Segmenter
+	err := seg.LoadDict("jp")
+	CheckErrWithMsg(err, "load dictionary error")
+	segs := seg.Cut(text, true)
+	return segs
+}
+
+func ShowErrMsg() {
 	if err := recover(); err != nil {
 		fmt.Printf("%+v\n", err)
 	}
 }
 
-func checkErr(err error) {
+func CheckErr(err error) {
 	if err != nil {
 		panic(err)
 		// log.Fatal(err)
 	}
 }
 
-func checkErrWithMsg(err error, msg string) {
+func CheckErrWithMsg(err error, msg string) {
 	if err != nil {
 		panic(errors.Wrap(err, msg))
 	}
