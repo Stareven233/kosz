@@ -1,7 +1,7 @@
 package main
 
-// go build  -o tiny_moji.exe ./
-// ./tiny_moji.exe
+// go build  -o koszu.exe ./
+// ./koszu.exe
 
 import (
 	"bufio"
@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	_ = exec.Command("cmd", "/c", "title tiny moji v2.4.2").Run()
+	_ = exec.Command("cmd", "/c", "title koszu v2.4.3").Run()
 	moji := NewMojiDict("F:/CODE/Go/translate_meow_go/local_moji.db")
 	defer moji.db.Close()
 
