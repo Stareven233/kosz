@@ -11,7 +11,8 @@ import (
 )
 
 func main() {
-	_ = exec.Command("cmd", "/c", "title koszu v2.5.0").Run()
+	err := exec.Command("cmd", "/c", "title koszu v2.6.2").Start()
+	CheckErr(err)
 	moji := NewMojiDict("F:/CODE/Go/translate_meow_go/local_moji.db")
 	defer moji.db.Close()
 
@@ -24,7 +25,7 @@ func main() {
 		data, _, _ := reader.ReadLine()
 		req = string(data)
 		req = moji.Command(req)
-		if req == "exit" && moji.commands[req] {
+		if req == "exit" {
 			break
 		}
 		// 没有输入、输入控制字符都忽略

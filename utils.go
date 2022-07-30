@@ -9,6 +9,7 @@ import (
 
 func TokenizeJp(text string) []string {
 	var seg gse.Segmenter
+	seg.SkipLog = true
 	err := seg.LoadDict("jp")
 	CheckErrWithMsg(err, "load dictionary error")
 	segs := seg.Cut(text, true)

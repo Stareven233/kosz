@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -13,6 +14,7 @@ import (
 	"database/sql"
 
 	_ "github.com/mattn/go-sqlite3"
+	"golang.org/x/text/encoding/simplifiedchinese"
 )
 
 type MojiDict struct {
@@ -22,7 +24,7 @@ type MojiDict struct {
 	path     string
 	db       *sql.DB
 	words    string
-	commands map[string]bool
+	commands map[string]string
 }
 
 type MojiWord struct {
@@ -93,14 +95,15 @@ func NewMojiDict(path string) MojiDict {
 		header: h,
 		path:   path,
 		db:     db,
-		commands: map[string]bool{
-			"list":   true,
-			"del":    true,
-			"detail": true,
-			"help":   true,
-			"q":      true,
-			"exit":   true,
-			"seg":    true,
+		commands: map[string]string{
+			"list":   "列出查询过的单词, list num (asc/desc)",
+			"del":    "删除某些单词, del word1 word2 ...",
+			"detail": "列出某个单词的详细信息, detail word",
+			"help":   "打印当前显示的帮助信息, help",
+			"q":      "退出程序，exit的简写方法, q",
+			"exit":   "退出程序, exit",
+			"gse":    "利用gse将列出的所有句子分词, gse sentence1 sentence2 ...",
+			"fgs":    "调用fugashi将句子分词并获取每个词的信息, a sentence",
 		},
 	}
 }
@@ -176,7 +179,7 @@ func (moji MojiDict) Command(cmd string) (word string) {
 	c := strings.SplitN(cmd, " ", 3)
 	lenC, mainC := len(c), c[0]
 
-	if !moji.commands[mainC] {
+	if _, exist := moji.commands[mainC]; !exist {
 		// 不是指令，返回作为单词去查询
 		return mainC
 	}
@@ -224,29 +227,50 @@ func (moji MojiDict) Command(cmd string) (word string) {
 
 	// 输出某一单词的详细信息
 	case "detail":
-		res := moji.Search(c[1])
-		fmt.Printf("    %+v\n", res)
+		word := moji.Search(c[1])
+		// fmt.Printf("    %+v\n", word)
+		res, err := json.MarshalIndent(word, "", "  ")
+		CheckErr(err)
+		fmt.Println(string(res))
 
 	// 输出所有可用指令
 	case "help":
-		print("    commands: ")
-		for k := range moji.commands {
-			fmt.Printf("%s ", k)
+		for k, v := range moji.commands {
+			fmt.Printf("%s: %s\n", k, v)
 		}
 		println()
 
 	// 退出程序
 	case "exit":
-		return "exit"
+		fallthrough
 	case "q":
 		return "exit"
 
 	// 将句子分词
-	case "seg":
+	case "gse":
 		text := strings.Join(c[1:], " ")
 		segs := TokenizeJp(text)
 		fmt.Println(segs)
+
+	case "fgs":
+		// text := bytes.NewBufferString(c[1])
+		// text := strings.NewReader(c[1])
+		// cmd := exec.Command("python", "./analyse.py")
+		// cmd.Stdin = text
+		// // buffer只支持bytes，传过去总是乱码
+		// result, err := cmd.CombinedOutput()
+
+		cmd := exec.Command("python", "./analyse.py", c[1])
+		cmd.Dir = "./tokenize"
+		result, err := cmd.CombinedOutput()
+		CheckErr(err)
+		// result, err = unicode.UTF8.NewDecoder().Bytes(result)
+		result, err = simplifiedchinese.GB18030.NewDecoder().Bytes(result)
+		// japanese.ShiftJIS反而不行，可能与操作系统语言有关
+		CheckErr(err)
+		fmt.Println(string(result))
 	}
+
 	return ""
 	//说明指令执行成功，不需再作为单词去查询
 }
